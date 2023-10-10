@@ -36,7 +36,7 @@ func (d *SummaryData) Scan(value interface{}) error {
 }
 
 type SourceSummary struct {
-	SourceID  string      `gorm:"column:source_id" json:"source_id"`
+	SourceID  string      `gorm:"column:source_id;primaryKey;unique" json:"source_id"`
 	Summary   SummaryData `gorm:"column:summary;type:jsonb" json:"summary"`
 	CreatedAt time.Time   `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time   `gorm:"column:updated_at" json:"updated_at"`

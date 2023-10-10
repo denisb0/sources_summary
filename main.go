@@ -38,7 +38,7 @@ func newSuccessRatio(startDate time.Time, endDate time.Time) successRatio {
 	}
 }
 
-func (sr successRatio) add(t time.Time, success bool) {
+func (sr *successRatio) add(t time.Time, success bool) {
 	if t.After(sr.startDate) && t.Before(sr.endDate) {
 		sr.totalCount++
 		if success {
@@ -210,7 +210,13 @@ func main() {
 
 	now := time.Now().UTC()
 
-	for _, sid := range sourceIDs {
+	sourcesLimit := 100
+
+	for i, sid := range sourceIDs {
+		if i == sourcesLimit {
+			break
+		}
+
 		var sources []models.ContentSource
 		var summary models.SummaryData
 
@@ -258,7 +264,6 @@ func main() {
 		})
 	}
 
-	// todo put summaries to table
 	// todo move to yggdrasil codebase and continue there
 	fmt.Printf("summaries: %d\n", len(summaries))
 
@@ -268,5 +273,14 @@ func main() {
 
 	if !db.Migrator().HasTable(&models.SourceSummary{}) {
 		panicOnError(db.Migrator().CreateTable(&models.SourceSummary{}))
+	}
+
+	for _, summary := range summaries {
+		if err := db.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "source_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"summary", "updated_at"}),
+		}).Create(&summary).Error; err != nil {
+			fmt.Println(err)
+		}
 	}
 }

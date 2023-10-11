@@ -99,6 +99,7 @@ func evalActivity(entries []models.ContentEntry, now time.Time) float64 {
 	for i, e := range entries {
 		if e.CreatedAt.After(verifyPeriodStart) {
 			verifyEntryCount = entryCount - i
+			break
 		}
 	}
 
@@ -152,7 +153,9 @@ func getEntryData(db *gorm.DB, sourceID string, summary *models.SummaryData, now
 
 	activeDuration := lastActivity.Sub(summary.AddedAt)
 
-	summary.AvgEntriesDay = math.Round(float64(len(activityEntries))/(activeDuration.Hours()/24)*100) / 100
+	if activeDuration > 0 {
+		summary.AvgEntriesDay = math.Round(float64(len(activityEntries))/(activeDuration.Hours()/24)*100) / 100
+	}
 
 	if len(activityEntries) > 0 {
 		summary.Activity = evalActivity(entries, now)
@@ -266,10 +269,6 @@ func main() {
 
 	// todo move to yggdrasil codebase and continue there
 	fmt.Printf("summaries: %d\n", len(summaries))
-
-	if len(summaries) > 0 {
-		fmt.Println(summaries[0])
-	}
 
 	if !db.Migrator().HasTable(&models.SourceSummary{}) {
 		panicOnError(db.Migrator().CreateTable(&models.SourceSummary{}))
